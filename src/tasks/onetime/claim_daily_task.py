@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from functools import cached_property
 
 from src.core.account_override_mixin import AccountOverrideMixin
@@ -56,7 +57,7 @@ class ClaimDailyTask(BaseGameTask):
         super().__init__(*args, **kwargs)
         self.name = "每日收菜"
         self.icon = Icons.Task
-        self.description = "按顺序领取邮件、每日惊喜盒子、日常活跃、周常活跃、大月卡任务、大月卡奖励。"
+        self.description = "按顺序领取邮件、日常活跃、周常活跃、大月卡任务、大月卡奖励。"
         # 注册子任务参数声明
         self._init_claim_daily_config()
 
@@ -94,7 +95,7 @@ class ClaimDailyTask(BaseGameTask):
         self.ui_ensure(page_mail)
 
         end_flag = False
-        for _ in self.loop():
+        for _ in self.loop(time_out=5, raise_if_time_out=False):
             if box := self.find_one(FeatureList.mail_button_claim_all, mask_function=make_hsv_isolator(HSVRange.WHITE, invert=False)):
                 if end_flag:
                     break
@@ -111,6 +112,8 @@ class ClaimDailyTask(BaseGameTask):
                 self.click(self.safe_box)
                 self.sleep(0.1)
                 continue
+        if not end_flag:
+            logging.getLogger(__name__).warning("邮件领取未确认完成，继续执行后续任务")
 
         if self._sub_task_cfg("删除已读邮件"):
             end_flag = False
@@ -121,7 +124,10 @@ class ClaimDailyTask(BaseGameTask):
                     self.click(self.box_of_screen(0.2401, 0.7546, 0.2484, 0.7750))
                     self.sleep(0.1)
                     continue
-                if box := self.find_one(FeatureList.confirm_button_3):
+                if box := self.find_one(
+                    FeatureList.confirm_button_3,
+                    box=self.box_of_screen(0.55, 0.58, 0.65, 0.66),
+                ):
                     end_flag = True
                     self.click(box)
                     self.sleep(0.1)
@@ -170,7 +176,10 @@ class ClaimDailyTask(BaseGameTask):
         self.ui_ensure(page_active_daily)
         frame_count = 0
         for _ in self.loop():
-            if box := self.find_one(FeatureList.active_daily_claim_task, mask_function=make_hsv_isolator(HSVRange.WHITE, invert=False)):
+            if box := self.find_one(
+                FeatureList.active_daily_claim_task,
+                box=self.box_of_screen(0.89, 0.14, 0.92, 0.83),
+            ):
                 frame_count = 0
                 self.click(box)
                 self.sleep(0.1)
@@ -202,7 +211,10 @@ class ClaimDailyTask(BaseGameTask):
         self.ui_ensure(page_active_weekly)
         frame_count = 0
         for _ in self.loop():
-            if box := self.find_one(FeatureList.active_weekly_claim_task, mask_function=make_hsv_isolator(HSVRange.WHITE, invert=False)):
+            if box := self.find_one(
+                FeatureList.active_weekly_claim_task,
+                box=self.box_of_screen(0.89, 0.14, 0.92, 0.83),
+            ):
                 frame_count = 0
                 self.click(box)
                 self.sleep(0.1)
@@ -241,7 +253,15 @@ class ClaimDailyTask(BaseGameTask):
             self.sleep(0.1)
         stable_time = self.active_time()
         for _ in self.loop():
-            if box := self.find_one(FeatureList.big_month_card_button_claim_all):
+            box = self.find_one(
+                FeatureList.big_month_card_button_claim_all,
+                box=self.box_of_screen(0.85, 0.75, 0.99, 0.83),
+            )
+            if box and self.find_one(
+                FeatureList.active_daily_exclamation_mark,
+                mask_function=active_exclamation_mark_mask,
+                box=self.box_of_screen(0.94, 0.75, 0.99, 0.80),
+            ):
                 self.click(box)
                 self.sleep(0.1)
                 stable_time = self.active_time()
@@ -261,7 +281,15 @@ class ClaimDailyTask(BaseGameTask):
             self.sleep(0.1)
         stable_time = self.active_time()
         for _ in self.loop():
-            if box := self.find_one(FeatureList.big_month_card_button_claim_all):
+            box = self.find_one(
+                FeatureList.big_month_card_button_claim_all,
+                box=self.box_of_screen(0.85, 0.75, 0.99, 0.83),
+            )
+            if box and self.find_one(
+                FeatureList.active_daily_exclamation_mark,
+                mask_function=active_exclamation_mark_mask,
+                box=self.box_of_screen(0.94, 0.75, 0.99, 0.80),
+            ):
                 self.click(box)
                 self.sleep(0.1)
                 stable_time = self.active_time()
@@ -276,7 +304,6 @@ class ClaimDailyTask(BaseGameTask):
 
     def run(self):
         self.claim_mail()
-        self.claim_shop()
         self.claim_active()
         self.claim_big_month_card()
         self.ui_ensure(page_main)
