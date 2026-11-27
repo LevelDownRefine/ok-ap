@@ -253,9 +253,14 @@ class ClaimDailyTask(BaseGameTask):
             self.sleep(0.1)
         stable_time = self.active_time()
         for _ in self.loop():
-            if box := self.find_one(
+            box = self.find_one(
                 FeatureList.big_month_card_button_claim_all,
                 box=self.box_of_screen(0.85, 0.75, 0.99, 0.83),
+            )
+            if box and self.find_one(
+                FeatureList.active_daily_exclamation_mark,
+                mask_function=active_exclamation_mark_mask,
+                box=self.box_of_screen(0.94, 0.75, 0.99, 0.80),
             ):
                 self.click(box)
                 self.sleep(0.1)
@@ -276,9 +281,14 @@ class ClaimDailyTask(BaseGameTask):
             self.sleep(0.1)
         stable_time = self.active_time()
         for _ in self.loop():
-            if box := self.find_one(
+            box = self.find_one(
                 FeatureList.big_month_card_button_claim_all,
                 box=self.box_of_screen(0.85, 0.75, 0.99, 0.83),
+            )
+            if box and self.find_one(
+                FeatureList.active_daily_exclamation_mark,
+                mask_function=active_exclamation_mark_mask,
+                box=self.box_of_screen(0.94, 0.75, 0.99, 0.80),
             ):
                 self.click(box)
                 self.sleep(0.1)
